@@ -22,6 +22,115 @@ const hasLiveProviderConfigured = () => Boolean(getAlphaVantageKey() || getFinnh
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
+const fetchWithRetry = async <T>(request: () => Promise<T>, maxAttempts = 3, initialDelayMs = 400): Promise<T> => {
+  let attempt = 0
+  let delayMs = initialDelayMs
+
+  while (attempt < maxAttempts) {
+    try {
+      return await request()
+    } catch (error) {
+      attempt += 1
+      const shouldRetry = attempt < maxAttempts && isRateLimitError(error)
+      if (!shouldRetry) {
+        throw error
+      }
+      await delay(delayMs)
+      delayMs *= 2
+    }
+  }
+
+  throw new Error('fetchWithRetry exhausted all attempts')
+}
+
+const enrichFromFinnhub = async (stock: Stock): Promise<Stock> => {
+  if (!getFinnhubKey()) return stock
+
+  let updatedStock = stock
+  const updates: Partial<Stock> = {}
+
+  if (updatedStock.name === updatedStock.symbol || updatedStock.allTimeHigh === 0) {
+    try {
+      const profileInfo = await fetchFinnhubProfile(stock.symbol)
+      if (profileInfo?.name && updatedStock.name === updatedStock.symbol) {
+        updates.name = profileInfo.name
+      }
+      if (typeof profileInfo?.allTimeHigh === 'number' && updatedStock.allTimeHigh === 0) {
+        updates.allTimeHigh = profileInfo.allTimeHigh
+      }
+    } catch {
+      // Ignore Finnhub profile enrichment failures.
+    }
+  }
+
+  if (updatedStock.allTimeHigh === 0 || updatedStock.forwardPE === 0) {
+    try {
+      const metricInfo = await fetchFinnhubMetric(stock.symbol)
+      if (typeof metricInfo?.allTimeHigh === 'number' && updatedStock.allTimeHigh === 0) {
+        updates.allTimeHigh = metricInfo.allTimeHigh
+      }
+      if (typeof metricInfo?.forwardPE === 'number' && updatedStock.forwardPE === 0) {
+        updates.forwardPE = metricInfo.forwardPE
+      }
+    } catch {
+      // Ignore Finnhub metric enrichment failures.
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    updatedStock = { ...updatedStock, ...updates }
+  }
+
+  return updatedStock
+}
+
+const enrichFromAlphaVantage = async (stock: Stock): Promise<Stock> => {
+  if (!getAlphaVantageKey()) return stock
+  if (stock.name !== stock.symbol && stock.allTimeHigh > 0 && stock.forwardPE > 0) return stock
+
+  try {
+    const overview = await fetchAlphaVantageOverview(stock.symbol)
+    if (!overview) return stock
+
+    const updates: Partial<Stock> = {}
+    if (stock.name === stock.symbol && overview.name) {
+      updates.name = overview.name
+    }
+    if (typeof overview.allTimeHigh === 'number' && stock.allTimeHigh === 0) {
+      updates.allTimeHigh = overview.allTimeHigh
+    }
+    if (typeof overview.forwardPE === 'number' && stock.forwardPE === 0) {
+      updates.forwardPE = overview.forwardPE
+    }
+
+    return Object.keys(updates).length > 0 ? { ...stock, ...updates } : stock
+  } catch {
+    return stock
+  }
+}
+
+const enrichWithProviderFallbacks = async (stock: Stock): Promise<Stock> => {
+  let updatedStock = stock
+
+  if (getFinnhubKey()) {
+    updatedStock = await enrichFromFinnhub(updatedStock)
+  }
+
+  if (getAlphaVantageKey()) {
+    updatedStock = await enrichFromAlphaVantage(updatedStock)
+  }
+
+  if ((updatedStock.name === updatedStock.symbol || updatedStock.allTimeHigh === 0 || updatedStock.forwardPE === 0) && typeof enrichStockNameFromYahoo === 'function') {
+    try {
+      updatedStock = await enrichStockNameFromYahoo(updatedStock)
+    } catch {
+      // Ignore Yahoo enrichment failures.
+    }
+  }
+
+  return enrichStockMetrics(updatedStock)
+}
+
 export const scoreToValuation = (score: number): Stock['valuation'] => {
   if (score > 10) return 'overvalued'
   if (score >= 0) return 'fair'
@@ -167,60 +276,6 @@ const fetchFinnhubMetric = async (symbol: string): Promise<{ allTimeHigh?: numbe
   }
 }
 
-const enrichStockNameFromProvider = async (stock: Stock): Promise<Stock> => {
-  if (stock.name !== stock.symbol && stock.allTimeHigh > 0 && stock.forwardPE > 0) {
-    return stock
-  }
-
-  let updatedStock = stock
-  const updates: Partial<Stock> = {}
-
-  if (getFinnhubKey() && stock.name === stock.symbol) {
-    const info = await fetchFinnhubProfile(stock.symbol)
-    if (info?.name) updates.name = info.name
-    if (typeof info?.allTimeHigh === 'number' && stock.allTimeHigh === 0) updates.allTimeHigh = info.allTimeHigh
-  }
-
-  if (getFinnhubKey() && stock.allTimeHigh === 0) {
-    const metricInfo = await fetchFinnhubMetric(stock.symbol)
-    if (typeof metricInfo?.allTimeHigh === 'number' && metricInfo.allTimeHigh > 0) {
-      updates.allTimeHigh = metricInfo.allTimeHigh
-    }
-    if (typeof metricInfo?.forwardPE === 'number' && metricInfo.forwardPE > 0) {
-      updates.forwardPE = metricInfo.forwardPE
-    }
-  }
-
-  if (Object.keys(updates).length > 0) {
-    updatedStock = { ...updatedStock, ...updates }
-  }
-
-  if (getAlphaVantageKey() && (updatedStock.name === updatedStock.symbol || updatedStock.allTimeHigh === 0 || updatedStock.forwardPE === 0)) {
-    const info = await fetchAlphaVantageOverview(stock.symbol)
-    if (info) {
-      if (updatedStock.name === updatedStock.symbol && info.name) updates.name = info.name
-      if (typeof info?.allTimeHigh === 'number' && updatedStock.allTimeHigh === 0) updates.allTimeHigh = info.allTimeHigh
-      if (typeof info?.forwardPE === 'number' && updatedStock.forwardPE === 0) updates.forwardPE = info.forwardPE
-    }
-  }
-
-  if (Object.keys(updates).length > 0) {
-    updatedStock = { ...updatedStock, ...updates }
-  }
-
-  if ((updatedStock.allTimeHigh === 0 || updatedStock.name === updatedStock.symbol) && typeof enrichStockNameFromYahoo === 'function') {
-    try {
-      const yahooEnhanced = await enrichStockNameFromYahoo(updatedStock)
-      if (yahooEnhanced.name !== updatedStock.name || yahooEnhanced.allTimeHigh > updatedStock.allTimeHigh) {
-        updatedStock = yahooEnhanced
-      }
-    } catch {
-      // Ignore Yahoo fallback failures and keep the best available data.
-    }
-  }
-
-  return enrichStockMetrics(updatedStock)
-}
 
 const fetchYahooSummary = async (symbol: string): Promise<number | undefined> => {
   const response = await axios.get(`/api/finance/v10/finance/quoteSummary/${symbol}`, {
@@ -298,13 +353,15 @@ const fetchAlphaVantageQuote = async (symbol: string): Promise<Stock> => {
     throw new Error('AlphaVantage API key is not configured')
   }
 
-  const response = await axios.get('/api/alpha/query', {
-    params: {
-      function: 'GLOBAL_QUOTE',
-      symbol,
-      apikey: apiKey,
-    },
-  })
+  const response = await fetchWithRetry(() =>
+    axios.get('/api/alpha/query', {
+      params: {
+        function: 'GLOBAL_QUOTE',
+        symbol,
+        apikey: apiKey,
+      },
+    }),
+  )
 
   const data = response.data
   if (isAlphaVantageDataError(data)) {
@@ -317,7 +374,7 @@ const fetchAlphaVantageQuote = async (symbol: string): Promise<Stock> => {
   }
 
   const stock = parseAlphaVantageQuote(quote, symbol)
-  return enrichStockNameFromProvider(stock)
+  return enrichWithProviderFallbacks(stock)
 }
 
 const parseFinnhubQuote = (quote: FinnhubQuote, symbol: string): Stock => {
@@ -347,12 +404,14 @@ const fetchFinnhubQuote = async (symbol: string): Promise<Stock> => {
   }
 
   const providerSymbol = getFinnhubSymbol(symbol)
-  const response = await axios.get('/api/finnhub/v1/quote', {
-    params: {
-      symbol: providerSymbol,
-      token: apiKey,
-    },
-  })
+  const response = await fetchWithRetry(() =>
+    axios.get('/api/finnhub/v1/quote', {
+      params: {
+        symbol: providerSymbol,
+        token: apiKey,
+      },
+    }),
+  )
 
   const quote = response.data
   if (!quote || quote.c == null || quote.c === 0) {
@@ -360,26 +419,31 @@ const fetchFinnhubQuote = async (symbol: string): Promise<Stock> => {
   }
 
   const stock = parseFinnhubQuote(quote, symbol)
-  return enrichStockNameFromProvider(stock)
+  return enrichWithProviderFallbacks(stock)
 }
 
 const fetchYahooQuote = async (symbol: string): Promise<Stock> => {
-  const response = await axios.get(apiUrl, {
-    params: { symbols: symbol },
-  })
+  const response = await fetchWithRetry(() =>
+    axios.get(apiUrl, {
+      params: { symbols: symbol },
+    }),
+  )
 
   const result = response.data?.quoteResponse?.result
   if (!Array.isArray(result) || result.length === 0) {
     throw new Error(`Missing Yahoo quote for ${symbol}`)
   }
 
-  return parseQuote(result[0], symbol)
+  const stock = parseQuote(result[0], symbol)
+  return getFinnhubKey() || getAlphaVantageKey() ? enrichWithProviderFallbacks(stock) : stock
 }
 
 const fetchYahooQuoteBatch = async (tickerRequests: { symbol: string }[]) => {
-  const response = await axios.get(apiUrl, {
-    params: { symbols: tickerRequests.map(t => t.symbol).join(',') },
-  })
+  const response = await fetchWithRetry(() =>
+    axios.get(apiUrl, {
+      params: { symbols: tickerRequests.map(t => t.symbol).join(',') },
+    }),
+  )
 
   const result = response.data?.quoteResponse?.result
   if (!Array.isArray(result)) {
@@ -394,7 +458,9 @@ const fetchYahooQuoteBatch = async (tickerRequests: { symbol: string }[]) => {
       }
 
       let stock = parseQuote(quote, symbol)
-      if (stock.allTimeHigh === 0) {
+      if (getFinnhubKey() || getAlphaVantageKey()) {
+        stock = await enrichWithProviderFallbacks(stock)
+      } else if (stock.allTimeHigh === 0) {
         stock = await enrichYahooAth(stock)
       }
       return stock
@@ -473,22 +539,7 @@ const fetchQuoteBatchOnce = async (tickerRequests: { symbol: string }[]) => {
     return quotes
   }
 
-  const response = await axios.get(apiUrl, {
-    params: { symbols: tickerRequests.map(t => t.symbol).join(',') },
-  })
-
-  const result = response.data?.quoteResponse?.result
-  if (!Array.isArray(result)) {
-    throw new Error(`Invalid quote response for symbols ${tickerRequests.map(t => t.symbol).join(',')}`)
-  }
-
-  return tickerRequests.map(({ symbol }) => {
-    const quote = findQuote(result, symbol)
-    if (!quote) {
-      throw new Error(`Missing Yahoo quote for ${symbol}`)
-    }
-    return parseQuote(quote, symbol)
-  })
+  return fetchYahooQuoteBatch(tickerRequests)
 }
 
 const isRateLimitError = (error: unknown) => {
@@ -500,23 +551,7 @@ const isRateLimitError = (error: unknown) => {
 }
 
 const fetchQuoteBatchWithRetry = async (tickerRequests: { symbol: string }[]) => {
-  const maxAttempts = 3
-  let attempt = 0
-  let delayMs = 400
-
-  while (attempt < maxAttempts) {
-    try {
-      return await fetchQuoteBatchOnce(tickerRequests)
-    } catch (error) {
-      attempt += 1
-      if (attempt >= maxAttempts || !isRateLimitError(error)) {
-        throw error
-      }
-      await delay(delayMs)
-      delayMs *= 2
-    }
-  }
-  throw new Error(`Unable to fetch quotes for ${tickerRequests.map(t => t.symbol).join(',')}`)
+  return fetchWithRetry(() => fetchQuoteBatchOnce(tickerRequests))
 }
 
 const findQuote = (quotes: Record<string, unknown>[], normalized: string) => {

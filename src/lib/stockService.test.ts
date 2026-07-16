@@ -5,6 +5,8 @@ import { fetchStocksData, loadFallbackStockData } from './stockService'
 describe('fetchStocksData error and retry behavior', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    delete process.env.VITE_ALPHA_VANTAGE_API_KEY
+    delete process.env.VITE_FINNHUB_API_KEY
   })
 
   it('returns fallback when fetch fails', async () => {
