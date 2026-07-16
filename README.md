@@ -1,8 +1,7 @@
 # Stock Valuation Dashboard
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/ci.yml) [![CodeQL](https://github.com/OWNER/REPO/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/codeql-analysis.yml)
+[![CI](https://github.com/vch-01/stock-beans/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vch-01/stock-beans/actions/workflows/ci.yml) [![CodeQL](https://github.com/vch-01/stock-beans/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/vch-01/stock-beans/actions/workflows/codeql-analysis.yml)
 
-Replace `OWNER/REPO` in the badge URLs above with your GitHub repository (e.g. `your-username/your-repo`) to enable live badges.
 
 A React, TypeScript, and Vite app for tracking US stocks and evaluating them with investor-style valuation metrics.
 
