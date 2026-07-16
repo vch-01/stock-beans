@@ -1,5 +1,10 @@
 name: "CodeQL"
 
+# Explicit permissions required so the CodeQL action can upload results
+permissions:
+  contents: read
+  security-events: write
+
 on:
   push:
     branches: [ main, master ]
