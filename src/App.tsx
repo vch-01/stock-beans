@@ -12,9 +12,24 @@ function App() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const storedTheme = window.localStorage.getItem('theme')
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      return storedTheme === 'dark'
+    }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+  })
+
   const liveProviderConfigured = Boolean(
     import.meta.env.VITE_ALPHA_VANTAGE_API_KEY || import.meta.env.VITE_FINNHUB_API_KEY,
   )
+
+  useEffect(() => {
+    const theme = isDarkMode ? 'dark' : 'light'
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('theme', theme)
+  }, [isDarkMode])
 
   const fetchStocks = async () => {
     setLoading(true)
@@ -145,6 +160,32 @@ function App() {
             fair valued, or overvalued using free market data.
           </p>
         </div>
+        <button
+          className="theme-toggle"
+          onClick={() => setIsDarkMode(prev => !prev)}
+          aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          type="button"
+        >
+          {isDarkMode ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="5" />
+              <g>
+                <path d="M12 1.5v3" />
+                <path d="M12 19.5v3" />
+                <path d="M4.22 4.22l2.12 2.12" />
+                <path d="M17.66 17.66l2.12 2.12" />
+                <path d="M1.5 12h3" />
+                <path d="M19.5 12h3" />
+                <path d="M4.22 19.78l2.12-2.12" />
+                <path d="M17.66 6.34l2.12-2.12" />
+              </g>
+            </svg>
+          )}
+        </button>
         <div className="control-panel">
           <div className="input-row">
             <label>
