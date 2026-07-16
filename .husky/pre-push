@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
-. "$(dirname \"$0\")/_/husky.sh"
 echo "Running TypeScript type check before push..."
-npm run typecheck --silent
+npm run typecheck --silent || exit 1
 echo "Running tests before push..."
-npm test --silent
+npm test --silent || exit 1
