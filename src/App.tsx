@@ -65,6 +65,12 @@ function App() {
     setError(null)
   }
 
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!inputSymbol.trim()) return
+    handleAdd()
+  }
+
   const handleRemove = (symbol: string) => {
     setTickers(prev => prev.filter((t: { symbol: string }) => t.symbol !== symbol))
   }
@@ -146,7 +152,7 @@ function App() {
           </p>
         </div>
         <div className="control-panel">
-          <div className="input-row">
+          <form className="input-row" onSubmit={handleFormSubmit}>
             <label>
               Ticker
               <input
@@ -155,13 +161,13 @@ function App() {
                 placeholder="AAPL"
               />
             </label>
-          </div>
-          <div className="button-row">
-            <button onClick={handleAdd}>Add stock</button>
-            <button onClick={fetchStocks} className="secondary">
-              Refresh data
-            </button>
-          </div>
+            <div className="button-row">
+              <button type="submit">Add stock</button>
+              <button type="button" onClick={fetchStocks} className="secondary">
+                Refresh data
+              </button>
+            </div>
+          </form>
           {error && <p className="error-message">{error}</p>}
         </div>
       </header>
