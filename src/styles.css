@@ -1,5 +1,19 @@
 :root {
   color-scheme: light;
+  --bg: linear-gradient(180deg, #eef7f2 0%, #f4f9f7 100%);
+  --surface: #ffffff;
+  --panel: #f8fafc;
+  --text: #111827;
+  --muted: #4b5563;
+  --border: #d1d5db;
+  --shadow: rgba(15, 23, 42, 0.08);
+  --button: #0f766e;
+  --button-secondary: #94a3b8;
+  --danger: #b91c1c;
+  --table-alt: #f8fafc;
+  --th: #334155;
+  background: var(--bg);
+  color: var(--text);
   font-family:
     Inter,
     ui-sans-serif,
@@ -8,10 +22,24 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background: #f4f9f7;
-  color: #111827;
   font-size: 16px;
   line-height: 1.5;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --surface: #111827;
+  --panel: #1f2937;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --button: #22c55e;
+  --button-secondary: #64748b;
+  --danger: #f87171;
+  --table-alt: #17233c;
+  --th: #e2e8f0;
 }
 
 * {
@@ -21,7 +49,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #eef7f2 0%, #f4f9f7 100%);
+  background: var(--bg);
+  color: var(--text);
 }
 
 button,
@@ -41,11 +70,55 @@ button {
 }
 
 .hero {
+  position: relative;
   display: grid;
   gap: 24px;
   grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
   align-items: start;
   margin-bottom: 32px;
+  padding-top: 72px;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease;
+  z-index: 1;
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1.8;
+}
+
+.theme-toggle svg circle,
+.theme-toggle svg path {
+  fill: none;
+}
+
+.theme-toggle svg path:first-of-type {
+  fill: var(--text);
+  stroke: none;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
 }
 
 .eyebrow {
@@ -70,11 +143,11 @@ h1 {
 }
 
 .control-panel {
-  background: #ffffff;
-  border: 1px solid #d1d5db;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 45px var(--shadow);
 }
 
 .input-row {
@@ -92,10 +165,11 @@ h1 {
 input,
 select {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
-  background: #f8fafc;
+  background: var(--panel);
+  color: var(--text);
 }
 
 .button-row {
@@ -110,14 +184,26 @@ button {
   border-radius: 14px;
   padding: 14px 22px;
   color: #ffffff;
-  background: #0f766e;
+  background: var(--button);
   transition:
     transform 0.18s ease,
     background-color 0.18s ease;
 }
 
 button.secondary {
-  background: #94a3b8;
+  background: var(--button-secondary);
+}
+
+.theme-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.theme-toggle {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 button:hover {
@@ -130,10 +216,10 @@ button:hover {
 }
 
 .table-card {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 30px;
   padding: 24px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 60px var(--shadow);
 }
 
 .table-header {
@@ -162,18 +248,18 @@ th,
 td {
   text-align: left;
   padding: 16px 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border);
 }
 
 th {
-  color: #334155;
+  color: var(--th);
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 tr:nth-child(even) {
-  background: #f8fafc;
+  background: var(--table-alt);
 }
 
 tr.valuation-undervalued {
@@ -205,6 +291,18 @@ tr.valuation-overvalued {
   border-radius: 24px;
   padding: 22px;
   min-height: 230px;
+}
+
+:root[data-theme='dark'] .panel-undervalued {
+  background: rgba(52, 211, 153, 0.12);
+}
+
+:root[data-theme='dark'] .panel-fair {
+  background: rgba(251, 191, 36, 0.12);
+}
+
+:root[data-theme='dark'] .panel-overvalued {
+  background: rgba(248, 113, 113, 0.12);
 }
 
 .panel h3 {
