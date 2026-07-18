@@ -24,6 +24,12 @@ export default defineConfig({
         secure: true,
         rewrite: path => path.replace(/^\/api\/finnhub/, ''),
       },
+      '/api/alpaca': {
+        target: 'https://data.alpaca.markets',
+        changeOrigin: true,
+        secure: true,
+        rewrite: path => path.replace(/^\/api\/alpaca/, ''),
+      },
     },
   },
 })
