@@ -1,11 +1,11 @@
-import type { Stock } from '../api'
+import type { Stock } from '../types';
 
-export type ColumnKey = keyof Stock | 'toAthPercent' | 'xIncrease' | 'priceAthPercent' | 'actions'
+export type ColumnKey = keyof Stock | 'toAthPercent' | 'xIncrease' | 'priceAthPercent' | 'actions';
 
 export type Column = {
-  key: ColumnKey
-  label: string
-}
+  key: ColumnKey;
+  label: string;
+};
 
 export const initialColumns: Column[] = [
   { key: 'symbol', label: 'Ticker' },
@@ -20,23 +20,23 @@ export const initialColumns: Column[] = [
   { key: 'priceAthPercent', label: '% decreased from ATH' },
   { key: 'valuation', label: 'Valuation' },
   { key: 'actions', label: 'Actions' },
-]
+];
 
 export const getColumnSortValue = (stock: Stock, key: ColumnKey): string | number | null => {
   if (key === 'toAthPercent') {
-    if (!stock.allTimeHigh || !stock.price) return null
-    return ((stock.allTimeHigh - stock.price) / stock.price) * 100
+    if (!stock.allTimeHigh || !stock.price) return null;
+    return ((stock.allTimeHigh - stock.price) / stock.price) * 100;
   }
   if (key === 'xIncrease') {
-    if (!stock.allTimeHigh || !stock.price) return null
-    return stock.allTimeHigh / stock.price
+    if (!stock.allTimeHigh || !stock.price) return null;
+    return stock.allTimeHigh / stock.price;
   }
   if (key === 'priceAthPercent') {
-    if (!stock.allTimeHigh || !stock.price) return null
-    return ((stock.allTimeHigh - stock.price) / stock.allTimeHigh) * 100
+    if (!stock.allTimeHigh || !stock.price) return null;
+    return ((stock.allTimeHigh - stock.price) / stock.allTimeHigh) * 100;
   }
-  if (key === 'allTimeHigh') return stock.allTimeHigh ?? null
-  if (key === 'actions') return null
-  const value = (stock as Record<string, unknown>)[key]
-  return typeof value === 'string' || typeof value === 'number' ? value : null
-}
+  if (key === 'allTimeHigh') return stock.allTimeHigh ?? null;
+  if (key === 'actions') return null;
+  const value = (stock as Record<string, unknown>)[key];
+  return typeof value === 'string' || typeof value === 'number' ? value : null;
+};
