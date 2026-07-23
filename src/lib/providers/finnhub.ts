@@ -67,6 +67,37 @@ export const fetchFinnhubProfile = async (
   return { name: typeof name === 'string' && name ? name : undefined, allTimeHigh };
 };
 
+export type FinnhubSearchResult = {
+  symbol: string;
+  name: string;
+  exchange: string;
+};
+
+export async function searchFinnhubSymbols(query: string): Promise<FinnhubSearchResult[]> {
+  const apiKey = getFinnhubKey();
+  if (!apiKey) return [];
+
+  const response = await axios.get('/api/finnhub/v1/search', {
+    params: { q: query, token: apiKey },
+  });
+
+  const results = response.data?.result;
+  if (!Array.isArray(results)) return [];
+
+  return results
+    .filter(
+      (r: Record<string, unknown>) =>
+        typeof r.type === 'string' &&
+        (r.type.includes('Common Stock') || r.type.includes('Stock') || r.type.includes('Equity')),
+    )
+    .map((r: Record<string, unknown>) => ({
+      symbol: String(r.symbol ?? ''),
+      name: String(r.description ?? r.symbol ?? ''),
+      exchange: String(r.exchange ?? ''),
+    }))
+    .filter(r => r.symbol && r.name);
+}
+
 export const fetchFinnhubMetric = async (
   symbol: string,
 ): Promise<{ allTimeHigh?: number; forwardPE?: number } | undefined> => {

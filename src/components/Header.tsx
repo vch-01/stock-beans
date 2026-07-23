@@ -1,4 +1,6 @@
-import { createSignal } from 'solid-js';
+import { For, createSignal, onCleanup } from 'solid-js';
+import { searchSymbols } from '../lib/search';
+import type { SearchResult } from '../lib/search';
 import { ConnectionIndicator } from './ConnectionIndicator';
 
 type Props = {
@@ -11,20 +13,108 @@ type Props = {
 };
 
 export function Header(props: Props) {
-  const [inputSymbol, setInputSymbol] = createSignal('');
+  const [inputValue, setInputValue] = createSignal('');
   const [localError, setLocalError] = createSignal<string | null>(null);
+  const [suggestions, setSuggestions] = createSignal<SearchResult[]>([]);
+  const [showDropdown, setShowDropdown] = createSignal(false);
+  const [activeIndex, setActiveIndex] = createSignal(-1);
+  const [searching, setSearching] = createSignal(false);
+  let inputRef: HTMLInputElement | undefined;
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const handleSubmit = (event: SubmitEvent) => {
-    event.preventDefault();
-    const value = inputSymbol().trim();
+  const handleSubmit = (symbol?: string) => {
+    const value = symbol ?? inputValue().trim();
     if (!value) return;
 
-    const err = props.onAdd(value);
+    const err = props.onAdd(value.toUpperCase());
     if (err) {
       setLocalError(err);
     } else {
       setLocalError(null);
-      setInputSymbol('');
+      setInputValue('');
+      setSuggestions([]);
+      setShowDropdown(false);
+    }
+  };
+
+  const doSearch = async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const results = await searchSymbols(query);
+      setSuggestions(results);
+      setShowDropdown(results.length > 0);
+      setActiveIndex(-1);
+    } catch {
+      setSuggestions([]);
+      setShowDropdown(false);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleInput = (value: string) => {
+    setInputValue(value);
+    setActiveIndex(-1);
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      void doSearch(value);
+    }, 300);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    const list = suggestions();
+    if (!showDropdown() || list.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev < list.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : list.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = activeIndex();
+      if (idx >= 0 && idx < list.length) {
+        handleSubmit(list[idx].symbol);
+      } else {
+        handleSubmit();
+      }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  const handleSelect = (result: SearchResult) => {
+    handleSubmit(result.symbol);
+  };
+
+  const handleClickOutside = (e: MouseEvent) => {
+    if (inputRef && !inputRef.closest('.search-wrapper')?.contains(e.target as Node)) {
+      setShowDropdown(false);
+    }
+  };
+  document.addEventListener('click', handleClickOutside);
+  onCleanup(() => {
+    document.removeEventListener('click', handleClickOutside);
+    if (debounceTimer) clearTimeout(debounceTimer);
+  });
+
+  const onSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    const idx = activeIndex();
+    const list = suggestions();
+    if (idx >= 0 && idx < list.length) {
+      handleSubmit(list[idx].symbol);
+    } else {
+      handleSubmit();
     }
   };
 
@@ -70,14 +160,39 @@ export function Header(props: Props) {
         <div class="header-info-row">
           <ConnectionIndicator connected={props.wsConnected} />
         </div>
-        <form class="input-row" onSubmit={handleSubmit}>
+        <form class="input-row" onSubmit={onSubmit}>
           <label>
-            Ticker
-            <input
-              value={inputSymbol()}
-              onInput={e => setInputSymbol((e.target as HTMLInputElement).value)}
-              placeholder="AAPL"
-            />
+            Ticker or company name
+            <div class="search-wrapper">
+              <input
+                ref={inputRef}
+                value={inputValue()}
+                onInput={e => handleInput((e.target as HTMLInputElement).value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  if (suggestions().length > 0) setShowDropdown(true);
+                }}
+                placeholder="AAPL or Apple Inc."
+                autocomplete="off"
+              />
+              {showDropdown() && (
+                <div class="search-dropdown">
+                  <For each={suggestions()}>
+                    {(result, index) => (
+                      <div
+                        class={`search-option${index() === activeIndex() ? ' active' : ''}`}
+                        onMouseDown={() => handleSelect(result)}
+                      >
+                        <span class="search-symbol">{result.symbol}</span>
+                        <span class="search-name">{result.name}</span>
+                        <span class="search-exchange">{result.exchange}</span>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              )}
+              {searching() && <div class="search-spinner" />}
+            </div>
           </label>
           <div class="button-row">
             <button type="submit">Add stock</button>
