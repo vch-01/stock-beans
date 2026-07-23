@@ -92,6 +92,30 @@ export const fetchYahooQuoteBatch = async (symbols: string[]): Promise<Stock[]> 
   });
 };
 
+export type YahooSearchResult = {
+  symbol: string;
+  name: string;
+  exchange: string;
+};
+
+export async function searchYahooSymbols(query: string): Promise<YahooSearchResult[]> {
+  const response = await axios.get('/api/finance/v1/finance/search', {
+    params: { q: query },
+  });
+
+  const quotes = response.data?.quotes;
+  if (!Array.isArray(quotes)) return [];
+
+  return quotes
+    .filter((q: Record<string, unknown>) => q.typeDisp === 'Equity')
+    .map((q: Record<string, unknown>) => ({
+      symbol: String(q.symbol ?? ''),
+      name: String(q.shortname ?? q.longname ?? q.symbol ?? ''),
+      exchange: String(q.exchDisp ?? ''),
+    }))
+    .filter(r => r.symbol && r.name);
+}
+
 export const fetchYahooSummary = async (symbol: string): Promise<number | undefined> => {
   const response = await axios.get(`/api/finance/v10/finance/quoteSummary/${symbol}`, {
     params: { modules: 'summaryDetail' },
