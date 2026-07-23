@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { enrichStocks } from './enrichment';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Stock } from '../types';
+import { enrichStocks } from './enrichment';
 
 vi.mock('./config', () => ({
   getFinnhubKey: () => 'test-key',
@@ -43,9 +43,15 @@ const makeStock = (overrides: Partial<Stock> = {}): Stock => {
 
 describe('enrichStocks', () => {
   beforeEach(() => {
-    [fetchFinnhubProfile, fetchFinnhubMetric, fetchAlphaVantageOverview, fetchYahooQuoteStock, fetchYahooSummary].forEach(
-      (m) => (m as ReturnType<typeof vi.fn>).mockReset(),
-    );
+    for (const m of [
+      fetchFinnhubProfile,
+      fetchFinnhubMetric,
+      fetchAlphaVantageOverview,
+      fetchYahooQuoteStock,
+      fetchYahooSummary,
+    ]) {
+      (m as ReturnType<typeof vi.fn>).mockReset();
+    }
     (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (fetchAlphaVantageOverview as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
@@ -66,7 +72,10 @@ describe('enrichStocks', () => {
   });
 
   it('fetches name and ATH from Finnhub profile', async () => {
-    (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Apple Inc.', allTimeHigh: 200 });
+    (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockResolvedValue({
+      name: 'Apple Inc.',
+      allTimeHigh: 200,
+    });
 
     const [result] = await enrichStocks([makeStock()]);
     expect(result.name).toBe('Apple Inc.');
@@ -75,7 +84,10 @@ describe('enrichStocks', () => {
   });
 
   it('fetches ATH and PE from Finnhub metric', async () => {
-    (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockResolvedValue({ allTimeHigh: 180, forwardPE: 22 });
+    (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allTimeHigh: 180,
+      forwardPE: 22,
+    });
 
     const [result] = await enrichStocks([makeStock()]);
     expect(result.allTimeHigh).toBe(180);
@@ -96,7 +108,9 @@ describe('enrichStocks', () => {
 
   it('skips Alpha Vantage name when Finnhub already set it', async () => {
     (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Apple Inc.' });
-    (fetchAlphaVantageOverview as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Apple Inc. (AV)' });
+    (fetchAlphaVantageOverview as ReturnType<typeof vi.fn>).mockResolvedValue({
+      name: 'Apple Inc. (AV)',
+    });
 
     const [result] = await enrichStocks([makeStock()]);
     expect(result.name).toBe('Apple Inc.');
@@ -122,7 +136,10 @@ describe('enrichStocks', () => {
 
   it('skips Yahoo when Finnhub already provided full data', async () => {
     (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Apple Inc.' });
-    (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockResolvedValue({ allTimeHigh: 180, forwardPE: 22 });
+    (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allTimeHigh: 180,
+      forwardPE: 22,
+    });
 
     await enrichStocks([makeStock()]);
     expect(fetchYahooQuoteStock).not.toHaveBeenCalled();
@@ -131,7 +148,9 @@ describe('enrichStocks', () => {
   it('handles provider errors gracefully', async () => {
     (fetchFinnhubProfile as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network error'));
     (fetchFinnhubMetric as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network error'));
-    (fetchAlphaVantageOverview as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network error'));
+    (fetchAlphaVantageOverview as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('network error'),
+    );
 
     const [result] = await enrichStocks([makeStock()]);
     expect(result.symbol).toBe('AAPL');
@@ -167,9 +186,7 @@ describe('enrichStocks', () => {
     profileMock
       .mockResolvedValueOnce({ name: 'Apple Inc.', allTimeHigh: 200 })
       .mockResolvedValueOnce({ name: 'Tesla Inc.', allTimeHigh: 300 });
-    metricMock
-      .mockResolvedValueOnce({ forwardPE: 22 })
-      .mockResolvedValueOnce({ forwardPE: 30 });
+    metricMock.mockResolvedValueOnce({ forwardPE: 22 }).mockResolvedValueOnce({ forwardPE: 30 });
 
     const results = await enrichStocks([
       makeStock({ symbol: 'AAPL' }),

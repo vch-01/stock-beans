@@ -22,7 +22,6 @@ declare global {
   }
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 declare const process: Process;
 
 export {};

@@ -7,7 +7,7 @@ export const normalizeSymbol = (symbol: string) => symbol.toUpperCase();
 export async function mapConcurrent<T, R>(
   items: T[],
   fn: (item: T) => Promise<R>,
-  concurrency: number = 5,
+  concurrency = 5,
 ): Promise<R[]> {
   const results: R[] = [];
   const entries: [number, T][] = items.map((item, index) => [index, item]);

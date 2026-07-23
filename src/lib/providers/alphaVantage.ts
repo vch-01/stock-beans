@@ -1,11 +1,11 @@
 import axios from 'axios';
 import type { Stock } from '../../types';
-import type { AlphaVantageQuote, AlphaVantageResponse } from '../providerTypes';
 import { getAlphaVantageKey } from '../config';
+import type { AlphaVantageQuote, AlphaVantageResponse } from '../providerTypes';
 import { enrichStockMetrics } from '../valuation';
 
 const isAlphaVantageDataError = (data: AlphaVantageResponse | undefined) => {
-  return Boolean((data && (data['Error Message'] || data['Note'] || data['Information'])) ?? false);
+  return Boolean((data && (data['Error Message'] || data.Note || data.Information)) ?? false);
 };
 
 const parseAlphaVantageQuote = (quote: AlphaVantageQuote, symbol: string): Stock => {
@@ -69,9 +69,9 @@ export const fetchAlphaVantageOverview = async (
   const data = response.data || {};
   const name = data?.Name ?? data?.name;
   const possibleHigh = Number(
-    data?.['52WeekHigh'] ?? data?.['52_WeekHigh'] ?? data?.['52WeekHighLow'] ?? NaN,
+    data?.['52WeekHigh'] ?? data?.['52_WeekHigh'] ?? data?.['52WeekHighLow'] ?? Number.NaN,
   );
-  const forwardPE = Number(data?.ForwardPE ?? data?.forwardPE ?? NaN);
+  const forwardPE = Number(data?.ForwardPE ?? data?.forwardPE ?? Number.NaN);
   const allTimeHigh = Number.isFinite(possibleHigh) ? possibleHigh : undefined;
   return {
     name: typeof name === 'string' && name ? name : undefined,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createSignal } from 'solid-js';
 import { ConnectionIndicator } from './ConnectionIndicator';
 
 type Props = {
@@ -10,22 +10,16 @@ type Props = {
   onToggleDark: () => void;
 };
 
-export function Header({
-  onAdd,
-  onRefresh,
-  loading,
-  wsConnected,
-  isDarkMode,
-  onToggleDark,
-}: Props) {
-  const [inputSymbol, setInputSymbol] = useState('');
-  const [localError, setLocalError] = useState<string | null>(null);
+export function Header(props: Props) {
+  const [inputSymbol, setInputSymbol] = createSignal('');
+  const [localError, setLocalError] = createSignal<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
-    if (!inputSymbol.trim()) return;
+    const value = inputSymbol().trim();
+    if (!value) return;
 
-    const err = onAdd(inputSymbol.trim());
+    const err = props.onAdd(value);
     if (err) {
       setLocalError(err);
     } else {
@@ -35,23 +29,23 @@ export function Header({
   };
 
   return (
-    <header className="hero">
+    <header class="hero">
       <div>
-        <p className="eyebrow">Stock Valuation Tracker</p>
+        <p class="eyebrow">Stock Valuation Tracker</p>
         <h1>US stock valuation dashboard</h1>
-        <p className="subhead">
+        <p class="subhead">
           Track US stocks, add interests, and see whether a stock looks undervalued, fair valued, or
           overvalued using free market data.
         </p>
       </div>
 
       <button
-        className="theme-toggle"
-        onClick={onToggleDark}
-        aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        class="theme-toggle"
+        onClick={props.onToggleDark}
+        aria-label={props.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
         type="button"
       >
-        {isDarkMode ? (
+        {props.isDarkMode ? (
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
           </svg>
@@ -72,27 +66,32 @@ export function Header({
         )}
       </button>
 
-      <div className="control-panel">
-        <div className="header-info-row">
-          <ConnectionIndicator connected={wsConnected} />
+      <div class="control-panel">
+        <div class="header-info-row">
+          <ConnectionIndicator connected={props.wsConnected} />
         </div>
-        <form className="input-row" onSubmit={handleSubmit}>
+        <form class="input-row" onSubmit={handleSubmit}>
           <label>
             Ticker
             <input
-              value={inputSymbol}
-              onChange={e => setInputSymbol(e.target.value)}
+              value={inputSymbol()}
+              onInput={e => setInputSymbol((e.target as HTMLInputElement).value)}
               placeholder="AAPL"
             />
           </label>
-          <div className="button-row">
+          <div class="button-row">
             <button type="submit">Add stock</button>
-            <button type="button" onClick={onRefresh} className="secondary" disabled={loading}>
-              {loading ? 'Loading…' : 'Refresh data'}
+            <button
+              type="button"
+              onClick={props.onRefresh}
+              class="secondary"
+              disabled={props.loading}
+            >
+              {props.loading ? 'Loading…' : 'Refresh data'}
             </button>
           </div>
         </form>
-        {localError && <p className="error-message">{localError}</p>}
+        {localError() && <p class="error-message">{localError()}</p>}
       </div>
     </header>
   );

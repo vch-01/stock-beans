@@ -1,7 +1,7 @@
 import type { Stock } from '../types';
-import { getFinnhubKey, getAlphaVantageKey } from './config';
-import { fetchFinnhubProfile, fetchFinnhubMetric } from './providers/finnhub';
+import { getAlphaVantageKey, getFinnhubKey } from './config';
 import { fetchAlphaVantageOverview } from './providers/alphaVantage';
+import { fetchFinnhubMetric, fetchFinnhubProfile } from './providers/finnhub';
 import { fetchYahooQuoteStock, fetchYahooSummary } from './providers/yahoo';
 import { processInBatches } from './utils';
 import { enrichStockMetrics } from './valuation';

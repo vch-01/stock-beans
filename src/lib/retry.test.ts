@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import axios from 'axios';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { isRateLimitError, withRetry } from './retry';
 
 vi.mock('./utils', () => ({
@@ -58,10 +58,7 @@ describe('withRetry', () => {
 
   it('retries on rate-limit errors and succeeds', async () => {
     const err = makeAxiosError('rate limit', 429);
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(err)
-      .mockResolvedValueOnce('ok');
+    const fn = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
     vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
 
     const result = await withRetry(fn, { maxAttempts: 3, baseDelayMs: 100 });
