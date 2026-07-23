@@ -3,7 +3,7 @@
 [![CI](https://github.com/vch-01/stock-beans/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vch-01/stock-beans/actions/workflows/ci.yml) [![CodeQL](https://github.com/vch-01/stock-beans/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/vch-01/stock-beans/actions/workflows/codeql-analysis.yml)
 
 
-A React, TypeScript, and Vite app for tracking US stocks and evaluating them with investor-style valuation metrics. Fetches live data through a cascading provider chain with automatic fallback and real-time WebSocket updates.
+A Solid JS, TypeScript, and Vite app for tracking US stocks and evaluating them with investor-style valuation metrics. Fetches live data through a cascading provider chain with automatic fallback and real-time WebSocket updates.
 
 ## Features
 
@@ -42,11 +42,32 @@ Each provider is checked for configuration and circuit-breaker status before cal
 
 ## Tech Stack
 
-- React 18
+- Solid JS 1.8
 - TypeScript
 - Vite
 - Axios
 - Vitest
+- Biome
+
+## Technology Choices
+
+### Solid JS (over React)
+React is the dominant industry standard and would be the conventional choice for a team project. However, as a solo self-directed project, I chose Solid JS to explore its reactive, compile-time approach. Solid compiles JSX directly to DOM operations instead of using a virtual DOM, giving it a performance advantage for real-time updates — particularly the WebSocket price ticks that update the table without a full re-render. The component model is similar enough to React that the architecture and patterns translate cleanly, while signals provide simpler reactivity without dependency arrays or hook rules.
+
+### TypeScript
+Strict type safety catches entire classes of bugs at compile time rather than runtime. The multi-provider pipeline has complex data shapes (provider responses, cache entries, enriched stock objects) that benefit from exhaustive type checking across module boundaries.
+
+### Vite
+Fast dev server with native ESM and a built-in proxy layer that solves CORS issues with the four external APIs (Alpaca, Finnhub, Alpha Vantage, Yahoo) — no separate backend proxy is needed.
+
+### Vitest
+Shares Vite's config and transform pipeline for zero duplicate setup. Jest-compatible API with native ESM support. Fast enough that 120+ tests run in under one second.
+
+### Axios
+The retry and circuit-breaker layer needs to distinguish rate-limit errors (429) from other failures. Axios provides typed error responses via `error.response.status` — something `fetch` lacks without a manual wrapper.
+
+### Biome
+Replaces ESLint + Prettier as a single unified tool for linting and formatting. Written in Rust, it is significantly faster and eliminates the complexity of maintaining two separate configs with overlapping concerns.
 
 ## Getting Started
 
@@ -94,7 +115,7 @@ npm run build
 src/
 ├── api.ts                          # Barrel re-exports
 ├── App.tsx                         # Layout composition
-├── main.tsx                        # React entry point
+├── main.tsx                        # Solid entry point
 ├── types.ts                        # Stock type definition
 ├── styles.css                      # All styles (light/dark theme)
 ├── hooks/
@@ -160,11 +181,11 @@ npm run lint
 # Auto-fix lintable issues
 npm run lint:fix
 
-# Format files with Prettier
+# Format files with Biome
 npm run format
 ```
 
-- Pre-commit hooks: Husky + lint-staged are configured to run lint/format on staged files. Run `npm run prepare` after a fresh `npm install` to enable Husky locally.
+- Pre-commit hooks: Husky + lint-staged are configured to run Biome on staged files. Run `npm run prepare` after a fresh `npm install` to enable Husky locally.
 
 ## Continuous Integration & Security
 

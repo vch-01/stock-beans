@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { runProviderChain } from './index';
-import { CircuitBreaker } from '../circuitBreaker';
-import { StockCache } from '../cache';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Stock } from '../../types';
+import { StockCache } from '../cache';
+import { CircuitBreaker } from '../circuitBreaker';
+import { runProviderChain } from './index';
 
 const mockAlpacaSnapshots = vi.fn();
 const mockFinnhubQuote = vi.fn();
@@ -64,19 +64,18 @@ describe('runProviderChain', () => {
     vi.clearAllMocks();
     cb = new CircuitBreaker();
     cache = new StockCache(60_000, 300_000);
-    mockLoadFallback.mockImplementation(
-      (tickers: { symbol: string }[]) =>
-        tickers.map(({ symbol }) => ({
-          symbol: symbol.toUpperCase(),
-          name: `${symbol} (fallback)`,
-          price: 0,
-          changePercent: 0,
-          allTimeHigh: 0,
-          forwardPE: 0,
-          earningsYield: 0,
-          valueScore: 0,
-          valuation: 'fair' as const,
-        })),
+    mockLoadFallback.mockImplementation((tickers: { symbol: string }[]) =>
+      tickers.map(({ symbol }) => ({
+        symbol: symbol.toUpperCase(),
+        name: `${symbol} (fallback)`,
+        price: 0,
+        changePercent: 0,
+        allTimeHigh: 0,
+        forwardPE: 0,
+        earningsYield: 0,
+        valueScore: 0,
+        valuation: 'fair' as const,
+      })),
     );
   });
 

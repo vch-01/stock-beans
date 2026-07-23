@@ -134,7 +134,7 @@ export class StockWebSocket {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
 
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30_000);
+    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
     this.reconnectAttempts += 1;
 
     this.reconnectTimer = setTimeout(() => {

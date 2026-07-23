@@ -14,19 +14,13 @@
   --th: #334155;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   font-size: 16px;
   line-height: 1.5;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f172a;
   --surface: #111827;
@@ -93,9 +87,7 @@ button {
   place-items: center;
   padding: 0;
   cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    background-color 0.18s ease;
+  transition: transform 0.18s ease, background-color 0.18s ease;
   z-index: 1;
 }
 
@@ -185,9 +177,7 @@ button {
   padding: 14px 22px;
   color: #ffffff;
   background: var(--button);
-  transition:
-    transform 0.18s ease,
-    background-color 0.18s ease;
+  transition: transform 0.18s ease, background-color 0.18s ease;
 }
 
 button.secondary {
@@ -293,15 +283,15 @@ tr.valuation-overvalued {
   min-height: 230px;
 }
 
-:root[data-theme='dark'] .panel-undervalued {
+:root[data-theme="dark"] .panel-undervalued {
   background: rgba(52, 211, 153, 0.12);
 }
 
-:root[data-theme='dark'] .panel-fair {
+:root[data-theme="dark"] .panel-fair {
   background: rgba(251, 191, 36, 0.12);
 }
 
-:root[data-theme='dark'] .panel-overvalued {
+:root[data-theme="dark"] .panel-overvalued {
   background: rgba(248, 113, 113, 0.12);
 }
 
@@ -384,7 +374,7 @@ tr.valuation-overvalued {
   gap: 12px;
 }
 
-:root[data-theme='dark'] .error-banner {
+:root[data-theme="dark"] .error-banner {
   background: rgba(248, 113, 113, 0.12);
   border-color: rgba(248, 113, 113, 0.3);
 }
@@ -395,7 +385,7 @@ tr.valuation-overvalued {
   font-size: 0.95rem;
 }
 
-:root[data-theme='dark'] .error-banner-message {
+:root[data-theme="dark"] .error-banner-message {
   color: #fca5a5;
 }
 
@@ -409,7 +399,7 @@ tr.valuation-overvalued {
   white-space: nowrap;
 }
 
-:root[data-theme='dark'] .error-banner-dismiss {
+:root[data-theme="dark"] .error-banner-dismiss {
   border-color: rgba(248, 113, 113, 0.3);
   color: #fca5a5;
 }

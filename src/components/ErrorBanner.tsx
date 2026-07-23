@@ -3,13 +3,13 @@ type Props = {
   onDismiss: () => void;
 };
 
-export function ErrorBanner({ message, onDismiss }: Props) {
-  if (!message) return null;
+export function ErrorBanner(props: Props) {
+  if (!props.message) return null;
 
   return (
-    <div className="error-banner">
-      <p className="error-banner-message">{message}</p>
-      <button className="error-banner-dismiss" onClick={onDismiss} type="button">
+    <div class="error-banner">
+      <p class="error-banner-message">{props.message}</p>
+      <button class="error-banner-dismiss" onClick={props.onDismiss} type="button">
         Dismiss
       </button>
     </div>

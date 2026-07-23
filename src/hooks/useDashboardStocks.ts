@@ -1,38 +1,27 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Stock } from '../types';
-import { fetchStocksData, defaultTickers } from '../lib/stockService';
+import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
+import { getAlpacaKey } from '../lib/config';
+import { defaultTickers, fetchStocksData } from '../lib/stockService';
 import { normalizeSymbol } from '../lib/utils';
 import { StockWebSocket } from '../lib/wsService';
-import { getAlpacaKey } from '../lib/config';
+import type { Stock } from '../types';
 
 export function useDashboardStocks() {
-  const [tickers, setTickers] = useState<Array<{ symbol: string }>>(defaultTickers);
-  const [stocks, setStocks] = useState<Stock[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [wsConnected, setWsConnected] = useState(false);
-  const wsRef = useRef<StockWebSocket | null>(null);
+  const [tickers, setTickers] = createSignal<Array<{ symbol: string }>>(defaultTickers);
+  const [stocks, setStocks] = createSignal<Stock[]>([]);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const [wsConnected, setWsConnected] = createSignal(false);
 
   const hasLiveProvider = Boolean(getAlpacaKey());
 
-  const loadStocks = useCallback(async () => {
+  const loadStocks = async (currentTickers: Array<{ symbol: string }>) => {
     setLoading(true);
     setError(null);
 
     try {
-      const { stocks: results, fallbackUsed } = await fetchStocksData(tickers);
-      setStocks(results);
+      const { stocks: results, fallbackUsed } = await fetchStocksData(currentTickers);
 
-      if (wsRef.current) {
-        for (const stock of results) {
-          if (stock.price > 0) {
-            wsRef.current.setPreviousClose(
-              stock.symbol,
-              stock.price - (stock.price * stock.changePercent) / 100,
-            );
-          }
-        }
-      }
+      setStocks(results);
 
       if (fallbackUsed) {
         setError(
@@ -49,18 +38,17 @@ export function useDashboardStocks() {
     } finally {
       setLoading(false);
     }
-  }, [tickers, hasLiveProvider]);
+  };
 
-  useEffect(() => {
+  createEffect(() => {
+    const currentTickers = tickers();
     queueMicrotask(() => {
-      void loadStocks();
+      void loadStocks(currentTickers);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tickers]);
+  });
 
-  useEffect(() => {
+  onMount(() => {
     const ws = new StockWebSocket();
-    wsRef.current = ws;
 
     const unsubStatus = ws.onStatusChange(setWsConnected);
     const unsubTrade = ws.onTrade((symbol, price, changePercent) => {
@@ -68,16 +56,16 @@ export function useDashboardStocks() {
     });
 
     ws.connect();
-    ws.subscribe(tickers.map(t => t.symbol));
+    ws.subscribe(tickers().map(t => t.symbol));
 
-    return () => {
+    onCleanup(() => {
       unsubTrade();
       unsubStatus();
       ws.disconnect();
-    };
-  }, [tickers]);
+    });
+  });
 
-  const addStock = useCallback((symbol: string) => {
+  const addStock = (symbol: string) => {
     const normalized = normalizeSymbol(symbol);
     if (!normalized) return 'Symbol is required';
 
@@ -88,22 +76,21 @@ export function useDashboardStocks() {
       return [...prev, { symbol: normalized }];
     });
     return null;
-  }, []);
+  };
 
-  const removeStock = useCallback((symbol: string) => {
+  const removeStock = (symbol: string) => {
     setTickers(prev => prev.filter(t => t.symbol !== symbol));
-  }, []);
+  };
 
-  const refresh = useCallback(() => {
-    void loadStocks();
-  }, [loadStocks]);
+  const refresh = () => {
+    void loadStocks(tickers());
+  };
 
   return {
     stocks,
     loading,
     error,
     wsConnected,
-    hasLiveProvider,
     addStock,
     removeStock,
     refresh,

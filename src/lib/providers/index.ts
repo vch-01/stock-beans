@@ -1,14 +1,14 @@
 import type { Stock } from '../../types';
+import type { StockCache } from '../cache';
 import type { ProviderName } from '../circuitBreaker';
 import type { CircuitBreaker } from '../circuitBreaker';
-import type { StockCache } from '../cache';
-import { fetchAlpacaSnapshots } from './alpaca';
-import { fetchFinnhubQuote } from './finnhub';
-import { fetchAlphaVantageQuote } from './alphaVantage';
-import { fetchYahooQuoteBatch } from './yahoo';
-import { getAlpacaKey, getFinnhubKey, getAlphaVantageKey } from '../config';
-import { delay, normalizeSymbol } from '../utils';
+import { getAlpacaKey, getAlphaVantageKey, getFinnhubKey } from '../config';
 import { loadFallbackStockData } from '../fallback';
+import { delay, normalizeSymbol } from '../utils';
+import { fetchAlpacaSnapshots } from './alpaca';
+import { fetchAlphaVantageQuote } from './alphaVantage';
+import { fetchFinnhubQuote } from './finnhub';
+import { fetchYahooQuoteBatch } from './yahoo';
 
 export type QuoteResult = {
   stock: Stock;

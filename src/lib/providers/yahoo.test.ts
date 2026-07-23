@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import axios from 'axios';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('axios');
 
@@ -53,7 +53,14 @@ describe('Yahoo provider', () => {
       mockedAxios.get.mockResolvedValue({
         data: {
           quoteResponse: {
-            result: [{ symbol: 'AAPL', shortName: 'Apple', regularMarketPrice: 150, regularMarketChangePercent: 0 }],
+            result: [
+              {
+                symbol: 'AAPL',
+                shortName: 'Apple',
+                regularMarketPrice: 150,
+                regularMarketChangePercent: 0,
+              },
+            ],
           },
         },
       });

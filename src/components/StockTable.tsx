@@ -1,7 +1,7 @@
-import { useRef, useMemo } from 'react';
-import type { Stock } from '../types';
+import { For, createMemo } from 'solid-js';
 import type { Column, ColumnKey } from '../lib/columns';
 import { getColumnSortValue } from '../lib/columns';
+import type { Stock } from '../types';
 
 type Props = {
   stocks: Stock[];
@@ -14,60 +14,50 @@ type Props = {
   loading: boolean;
 };
 
-export function StockTable({
-  stocks,
-  columns,
-  sortKey,
-  sortDirection,
-  onSort,
-  onRemove,
-  onColumnsChange,
-  loading,
-}: Props) {
-  const dragIndexRef = useRef<number | null>(null);
+export function StockTable(props: Props) {
+  let dragIndex: number | null = null;
 
   const handleDragStart = (index: number) => {
-    dragIndexRef.current = index;
+    dragIndex = index;
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLTableHeaderCellElement>) => {
+  const handleDragOver = (event: DragEvent) => {
     event.preventDefault();
   };
 
   const handleDrop = (index: number) => {
-    const fromIndex = dragIndexRef.current;
-    if (fromIndex === null || fromIndex === index) return;
+    if (dragIndex === null || dragIndex === index) return;
 
-    const next = [...columns];
-    const [moved] = next.splice(fromIndex, 1);
+    const next = [...props.columns];
+    const [moved] = next.splice(dragIndex, 1);
     next.splice(index, 0, moved);
-    onColumnsChange(next);
-    dragIndexRef.current = null;
+    props.onColumnsChange(next);
+    dragIndex = null;
   };
 
   const getSortValue = (stock: Stock, key: ColumnKey): string | number | null =>
     getColumnSortValue(stock, key);
 
-  const sortedStocks = useMemo(() => {
-    return [...stocks].sort((a, b) => {
-      const aValue = getSortValue(a, sortKey);
-      const bValue = getSortValue(b, sortKey);
+  const sortedStocks = createMemo(() => {
+    return [...props.stocks].sort((a, b) => {
+      const aValue = getSortValue(a, props.sortKey);
+      const bValue = getSortValue(b, props.sortKey);
 
       if (aValue === bValue) return 0;
-      if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
-      if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue == null) return props.sortDirection === 'asc' ? 1 : -1;
+      if (bValue == null) return props.sortDirection === 'asc' ? -1 : 1;
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc'
+        return props.sortDirection === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
-      return sortDirection === 'asc'
+      return props.sortDirection === 'asc'
         ? Number(aValue) - Number(bValue)
         : Number(bValue) - Number(aValue);
     });
-  }, [stocks, sortKey, sortDirection]);
+  });
 
   const renderCell = (stock: Stock, column: Column) => {
     switch (column.key) {
@@ -109,7 +99,7 @@ export function StockTable({
         return stock.valuation;
       case 'actions':
         return (
-          <button className="remove-btn" onClick={() => onRemove(stock.symbol)} type="button">
+          <button class="remove-btn" onClick={() => props.onRemove(stock.symbol)} type="button">
             Remove
           </button>
         );
@@ -119,45 +109,57 @@ export function StockTable({
   };
 
   return (
-    <section className="table-card">
-      <div className="table-header">
+    <section class="table-card">
+      <div class="table-header">
         <h2>Tracked stocks</h2>
-        <span>{stocks.length} companies</span>
+        <span>{props.stocks.length} companies</span>
       </div>
-      <div className="table-scroll">
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
-              {columns.map((column, index) => (
-                <th
-                  key={column.key}
-                  draggable={column.key !== 'actions'}
-                  onDragStart={column.key !== 'actions' ? () => handleDragStart(index) : undefined}
-                  onDragOver={column.key !== 'actions' ? handleDragOver : undefined}
-                  onDrop={column.key !== 'actions' ? () => handleDrop(index) : undefined}
-                  onClick={() => onSort(column)}
-                  style={{ cursor: column.key === 'actions' ? 'default' : 'pointer' }}
-                >
-                  {column.label}
-                  {column.key !== 'actions' && sortKey === column.key && (
-                    <span>{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
-                  )}
-                </th>
-              ))}
+              <For each={props.columns}>
+                {(column, index) => (
+                  <th
+                    draggable={column.key !== 'actions'}
+                    onDragStart={
+                      column.key !== 'actions' ? () => handleDragStart(index()) : undefined
+                    }
+                    onDragOver={column.key !== 'actions' ? handleDragOver : undefined}
+                    onDrop={column.key !== 'actions' ? () => handleDrop(index()) : undefined}
+                    onClick={() => props.onSort(column)}
+                    onKeyDown={
+                      column.key !== 'actions'
+                        ? (e: KeyboardEvent) => {
+                            if (e.key === 'Enter' || e.key === ' ') props.onSort(column);
+                          }
+                        : undefined
+                    }
+                    tabIndex={column.key !== 'actions' ? 0 : undefined}
+                    role={column.key !== 'actions' ? 'columnheader' : undefined}
+                    style={{ cursor: column.key === 'actions' ? 'default' : 'pointer' }}
+                  >
+                    {column.label}
+                    {column.key !== 'actions' && props.sortKey === column.key && (
+                      <span>{props.sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                    )}
+                  </th>
+                )}
+              </For>
             </tr>
           </thead>
           <tbody>
-            {sortedStocks.map(stock => (
-              <tr key={stock.symbol} className={`valuation-${stock.valuation}`}>
-                {columns.map(column => (
-                  <td key={`${stock.symbol}-${column.key}`}>{renderCell(stock, column)}</td>
-                ))}
-              </tr>
-            ))}
+            <For each={sortedStocks()}>
+              {stock => (
+                <tr class={`valuation-${stock.valuation}`}>
+                  <For each={props.columns}>{column => <td>{renderCell(stock, column)}</td>}</For>
+                </tr>
+              )}
+            </For>
           </tbody>
         </table>
       </div>
-      {loading && <p className="hint">Loading data…</p>}
+      {props.loading && <p class="hint">Loading data…</p>}
     </section>
   );
 }

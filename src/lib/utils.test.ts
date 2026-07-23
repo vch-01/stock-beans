@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { delay, delayWithJitter, normalizeSymbol, mapConcurrent, processInBatches } from './utils';
+import { delay, delayWithJitter, mapConcurrent, normalizeSymbol, processInBatches } from './utils';
 
 describe('utils', () => {
   describe('normalizeSymbol', () => {
@@ -33,12 +33,12 @@ describe('utils', () => {
 
   describe('mapConcurrent', () => {
     it('runs all items with limited concurrency', async () => {
-      const results = await mapConcurrent([1, 2, 3], async (n) => n * 2, 2);
+      const results = await mapConcurrent([1, 2, 3], async n => n * 2, 2);
       expect(results).toEqual([2, 4, 6]);
     });
 
     it('handles empty input', async () => {
-      const results = await mapConcurrent([], async (n) => n, 2);
+      const results = await mapConcurrent([], async n => n, 2);
       expect(results).toEqual([]);
     });
 
@@ -46,7 +46,7 @@ describe('utils', () => {
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       const results = await mapConcurrent(
         [3, 1, 2],
-        async (n) => {
+        async n => {
           await delay(n * 10);
           return n;
         },
