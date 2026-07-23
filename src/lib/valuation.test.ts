@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { computeValueScore, deriveStockValuation, enrichStockMetrics } from './valuation';
-import { getColumnSortValue, initialColumns } from './columns';
 import type { Stock } from '../api';
+import { getColumnSortValue, initialColumns } from './columns';
+import { computeValueScore, deriveStockValuation, enrichStockMetrics } from './valuation';
 
 const buildStock = (overrides: Partial<Stock> = {}): Stock => ({
   symbol: 'AAPL',

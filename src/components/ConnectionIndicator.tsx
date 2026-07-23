@@ -2,14 +2,14 @@ type Props = {
   connected: boolean;
 };
 
-export function ConnectionIndicator({ connected }: Props) {
+export function ConnectionIndicator(props: Props) {
   return (
     <span
-      className="connection-indicator"
-      title={connected ? 'Live updates active' : 'No live connection'}
+      class="connection-indicator"
+      title={props.connected ? 'Live updates active' : 'No live connection'}
     >
-      <span className={`connection-dot ${connected ? 'connected' : 'disconnected'}`} />
-      <span className="connection-label">{connected ? 'Live' : 'Offline'}</span>
+      <span class={`connection-dot ${props.connected ? 'connected' : 'disconnected'}`} />
+      <span class="connection-label">{props.connected ? 'Live' : 'Offline'}</span>
     </span>
   );
 }

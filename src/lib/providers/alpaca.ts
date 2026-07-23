@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Stock } from '../../types';
-import type { AlpacaSnapshotsResponse, AlpacaSnapshot } from '../providerTypes';
 import { getAlpacaKey, getAlpacaSecret } from '../config';
+import type { AlpacaSnapshot, AlpacaSnapshotsResponse } from '../providerTypes';
 import { enrichStockMetrics } from '../valuation';
 
 const parseAlpacaSnapshot = (snapshot: AlpacaSnapshot, symbol: string): Stock => {

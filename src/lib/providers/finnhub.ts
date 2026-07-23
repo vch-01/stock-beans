@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Stock } from '../../types';
-import type { FinnhubQuote } from '../providerTypes';
 import { getFinnhubKey } from '../config';
+import type { FinnhubQuote } from '../providerTypes';
 import { normalizeSymbol } from '../utils';
 import { enrichStockMetrics } from '../valuation';
 
@@ -61,7 +61,7 @@ export const fetchFinnhubProfile = async (
   const profile = response.data || {};
   const name = profile?.name ?? profile?.displayName ?? profile?.companyName;
   const possibleHigh = Number(
-    profile?.fiftyTwoWeekHigh ?? profile?.['52WeekHigh'] ?? profile?.high52 ?? NaN,
+    profile?.fiftyTwoWeekHigh ?? profile?.['52WeekHigh'] ?? profile?.high52 ?? Number.NaN,
   );
   const allTimeHigh = Number.isFinite(possibleHigh) ? possibleHigh : undefined;
   return { name: typeof name === 'string' && name ? name : undefined, allTimeHigh };
@@ -87,9 +87,9 @@ export const fetchFinnhubMetric = async (
       metric?.['52WeekHigh']?.raw ??
       metric?.yearHigh ??
       metric?.['52WeekHighLow'] ??
-      NaN,
+      Number.NaN,
   );
-  const forwardPE = Number(metric?.forwardPE ?? metric?.['forwardPE'] ?? NaN);
+  const forwardPE = Number(metric?.forwardPE ?? metric?.forwardPE ?? Number.NaN);
   const allTimeHigh = Number.isFinite(possibleHigh) ? possibleHigh : undefined;
   return {
     allTimeHigh,

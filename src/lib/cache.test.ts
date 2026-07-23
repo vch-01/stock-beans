@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { StockCache } from './cache';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Stock } from '../types';
+import { StockCache } from './cache';
 
 const makeStock = (symbol: string): Stock => ({
   symbol,

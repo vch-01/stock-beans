@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchStocksData,
-  normalizeSymbol,
-  scoreToValuation,
   getFinnhubSymbol,
+  normalizeSymbol,
   resetServiceState,
+  scoreToValuation,
 } from './api';
 
 type AxiosGetMock = ReturnType<typeof vi.fn>;

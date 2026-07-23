@@ -6,48 +6,45 @@ import { enrichStockMetrics } from '../valuation';
 const apiUrl = '/api/finance/v7/finance/quote';
 
 const parseQuote = (quote: YahooQuote, symbol: string): Stock => {
-  const price = Number(quote['regularMarketPrice'] ?? 0);
-  const changePercent = Number(quote['regularMarketChangePercent'] ?? 0);
+  const price = Number(quote.regularMarketPrice ?? 0);
+  const changePercent = Number(quote.regularMarketChangePercent ?? 0);
   const summaryDetail = quote.summaryDetail as YahooQuote['summaryDetail'] | undefined;
   const defaultKeyStatistics = quote.defaultKeyStatistics as Record<string, unknown> | undefined;
   const fiftyTwoWeekHigh = Number(
-    quote['fiftyTwoWeekHigh'] ??
+    quote.fiftyTwoWeekHigh ??
       quote['52WeekHigh'] ??
       (summaryDetail &&
-        (summaryDetail['fiftyTwoWeekHigh'] as Record<string, unknown> | undefined)?.['raw']) ??
-      (summaryDetail && summaryDetail['fiftyTwoWeekHigh']) ??
+        (summaryDetail.fiftyTwoWeekHigh as Record<string, unknown> | undefined)?.raw) ??
+      summaryDetail?.fiftyTwoWeekHigh ??
       (defaultKeyStatistics &&
-        (defaultKeyStatistics['fiftyTwoWeekHigh'] as Record<string, unknown> | undefined)?.[
-          'raw'
-        ]) ??
-      (defaultKeyStatistics && defaultKeyStatistics['fiftyTwoWeekHigh']) ??
+        (defaultKeyStatistics.fiftyTwoWeekHigh as Record<string, unknown> | undefined)?.raw) ??
+      defaultKeyStatistics?.fiftyTwoWeekHigh ??
       0,
   );
   const forwardPE = Number(
-    quote['forwardPE'] ??
-      (quote['forwardPE'] as Record<string, unknown> | undefined)?.['raw'] ??
-      (summaryDetail &&
-        (summaryDetail['forwardPE'] as Record<string, unknown> | undefined)?.['raw']) ??
-      (summaryDetail && summaryDetail['forwardPE']) ??
+    quote.forwardPE ??
+      (quote.forwardPE as Record<string, unknown> | undefined)?.raw ??
+      (summaryDetail && (summaryDetail.forwardPE as Record<string, unknown> | undefined)?.raw) ??
+      summaryDetail?.forwardPE ??
       (defaultKeyStatistics &&
-        (defaultKeyStatistics['forwardPE'] as Record<string, unknown> | undefined)?.['raw']) ??
-      (defaultKeyStatistics && defaultKeyStatistics['forwardPE']) ??
+        (defaultKeyStatistics.forwardPE as Record<string, unknown> | undefined)?.raw) ??
+      defaultKeyStatistics?.forwardPE ??
       0,
   );
   const allTimeHigh = Number(
-    fiftyTwoWeekHigh || (quote['regularMarketDayHigh'] ?? quote['high'] ?? quote['highPrice'] ?? 0),
+    fiftyTwoWeekHigh || (quote.regularMarketDayHigh ?? quote.high ?? quote.highPrice ?? 0),
   );
   return enrichStockMetrics({
     symbol,
     name:
-      (quote['longName'] as string | undefined) ??
-      (quote['long_name'] as string | undefined) ??
-      (quote['shortName'] as string | undefined) ??
-      (quote['short_name'] as string | undefined) ??
-      (quote['displayName'] as string | undefined) ??
-      (quote['name'] as string | undefined) ??
-      (quote['companyName'] as string | undefined) ??
-      (quote['symbol'] as string | undefined) ??
+      (quote.longName as string | undefined) ??
+      (quote.long_name as string | undefined) ??
+      (quote.shortName as string | undefined) ??
+      (quote.short_name as string | undefined) ??
+      (quote.displayName as string | undefined) ??
+      (quote.name as string | undefined) ??
+      (quote.companyName as string | undefined) ??
+      (quote.symbol as string | undefined) ??
       symbol,
     price,
     changePercent,
@@ -60,7 +57,7 @@ const parseQuote = (quote: YahooQuote, symbol: string): Stock => {
 };
 
 const findQuote = (quotes: Record<string, unknown>[], normalized: string) => {
-  return quotes.find(quote => String(quote['symbol']).toUpperCase() === normalized.toUpperCase());
+  return quotes.find(quote => String(quote.symbol).toUpperCase() === normalized.toUpperCase());
 };
 
 export const fetchYahooQuoteStock = async (symbol: string): Promise<Stock> => {
@@ -107,7 +104,7 @@ export const fetchYahooSummary = async (symbol: string): Promise<number | undefi
       summary?.fiftyTwoWeekHigh ??
       summary?.['52WeekHigh'] ??
       summary?.['52WeekHigh']?.raw ??
-      NaN,
+      Number.NaN,
   );
   return Number.isFinite(high) ? high : undefined;
 };

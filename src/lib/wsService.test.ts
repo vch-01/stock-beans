@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StockWebSocket } from './wsService';
 
 vi.mock('./config', () => ({
@@ -7,7 +7,7 @@ vi.mock('./config', () => ({
 }));
 
 function createMockWs() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: mock WebSocket needs generic callbacks
   const listeners: Record<string, Array<(...args: any[]) => void>> = {};
   return {
     readyState: 0,
@@ -16,28 +16,36 @@ function createMockWs() {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     set onopen(fn: unknown) {
-      listeners['open'] = [fn as () => void];
+      listeners.open = [fn as () => void];
     },
     set onclose(fn: unknown) {
-      listeners['close'] = [fn as () => void];
+      listeners.close = [fn as () => void];
     },
     set onmessage(fn: unknown) {
-      listeners['message'] = [fn as (e: MessageEvent) => void];
+      listeners.message = [fn as (e: MessageEvent) => void];
     },
     set onerror(fn: unknown) {
-      listeners['error'] = [fn as () => void];
+      listeners.error = [fn as () => void];
     },
-    get onopen() { return listeners['open']?.[0]; },
-    get onclose() { return listeners['close']?.[0]; },
-    get onmessage() { return listeners['message']?.[0]; },
-    get onerror() { return listeners['error']?.[0]; },
+    get onopen() {
+      return listeners.open?.[0];
+    },
+    get onclose() {
+      return listeners.close?.[0];
+    },
+    get onmessage() {
+      return listeners.message?.[0];
+    },
+    get onerror() {
+      return listeners.error?.[0];
+    },
     trigger(event: string, data?: unknown) {
-      if (event === 'open' && listeners['open']?.[0]) listeners['open'][0]();
-      if (event === 'close' && listeners['close']?.[0]) listeners['close'][0]();
-      if (event === 'message' && listeners['message']?.[0]) {
-        listeners['message'][0]({ data: JSON.stringify(data) } as unknown as MessageEvent);
+      if (event === 'open' && listeners.open?.[0]) listeners.open[0]();
+      if (event === 'close' && listeners.close?.[0]) listeners.close[0]();
+      if (event === 'message' && listeners.message?.[0]) {
+        listeners.message[0]({ data: JSON.stringify(data) } as unknown as MessageEvent);
       }
-      if (event === 'error' && listeners['error']?.[0]) listeners['error'][0]();
+      if (event === 'error' && listeners.error?.[0]) listeners.error[0]();
     },
     _listeners: listeners,
   };
@@ -75,9 +83,7 @@ describe('StockWebSocket', () => {
 
   it('creates a WebSocket connection on connect()', () => {
     ws.connect();
-    expect(globalThis.WebSocket).toHaveBeenCalledWith(
-      'wss://stream.data.alpaca.markets/v2/iex',
-    );
+    expect(globalThis.WebSocket).toHaveBeenCalledWith('wss://stream.data.alpaca.markets/v2/iex');
   });
 
   it('does not create duplicate connections when already open', () => {

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchStocksData } from './stockService';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadFallbackStockData } from './fallback';
+import { fetchStocksData } from './stockService';
 
 describe('fetchStocksData error and retry behavior', () => {
   beforeEach(() => {

@@ -1,10 +1,10 @@
 import type { Stock } from '../types';
-import { normalizeSymbol } from './utils';
 import { StockCache } from './cache';
 import { CircuitBreaker } from './circuitBreaker';
-import { runProviderChain } from './providers/index';
-import { loadFallbackStockData } from './fallback';
 import { enrichStocks } from './enrichment';
+import { loadFallbackStockData } from './fallback';
+import { runProviderChain } from './providers/index';
+import { normalizeSymbol } from './utils';
 import { enrichStockMetrics } from './valuation';
 
 export const defaultTickers = [{ symbol: 'AAPL' }, { symbol: 'TSLA' }];

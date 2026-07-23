@@ -30,7 +30,7 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       if (attempt >= maxAttempts || !isRateLimitError(error)) {
         throw error;
       }
-      await delayWithJitter(baseDelayMs * Math.pow(2, attempt - 1));
+      await delayWithJitter(baseDelayMs * 2 ** (attempt - 1));
     }
   }
 
