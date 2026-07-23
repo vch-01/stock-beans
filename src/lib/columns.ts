@@ -37,6 +37,10 @@ export const getColumnSortValue = (stock: Stock, key: ColumnKey): string | numbe
   }
   if (key === 'allTimeHigh') return stock.allTimeHigh ?? null;
   if (key === 'actions') return null;
+  if (key === 'valuation') {
+    const order = { undervalued: 0, fair: 1, overvalued: 2 };
+    return order[stock.valuation] ?? 1;
+  }
   const value = (stock as Record<string, unknown>)[key];
   return typeof value === 'string' || typeof value === 'number' ? value : null;
 };
